@@ -20,7 +20,8 @@
     <PackageIcon>logo\60_60.jpg</PackageIcon>
     <PackageProjectUrl>https://github.com/NordicScreen/npoi-simple</PackageProjectUrl>
     <PackageReleaseNotes>https://github.com/NordicScreen/npoi-simple/releases</PackageReleaseNotes>
-    <Copyright>Nissl LLC</Copyright>
+    <!-- Apache-2.0 requires retaining the upstream copyright notice; this fork is listed additionally -->
+    <Copyright>Copyright (c) Nissl LLC. Modifications copyright (c) NordicScreen.</Copyright>
     <PackageTags>xlsx xls Excel Word docx office ole</PackageTags>
 
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
