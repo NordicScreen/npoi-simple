@@ -28,6 +28,7 @@
         "Compile",
         "InstallFonts",
         "Pack",
+        "Publish",
         "Restore",
         "Test"
       ]

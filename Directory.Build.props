@@ -11,15 +11,15 @@
     <VersionPrefix>2.7.6</VersionPrefix>
     <Title>NPOI</Title>
     <Authors>Tony Qu,NPOI Contributors</Authors>
-    <Owners>Nissl Lab</Owners>
+    <Owners>NordicScreen</Owners>
     <Description>.NET port of Apache POI</Description>
     <Summary>NPOI can read and write xls (Excel 97-2003), xlsx(Excel 2007+) and docx(Word 2007+). </Summary>
-    <RepositoryUrl>https://github.com/nissl-lab/npoi</RepositoryUrl>
+    <RepositoryUrl>https://github.com/NordicScreen/npoi-simple</RepositoryUrl>
 
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageIcon>logo\60_60.jpg</PackageIcon>
-    <PackageProjectUrl>https://github.com/nissl-lab/npoi</PackageProjectUrl>
-    <PackageReleaseNotes>https://github.com/nissl-lab/npoi/discussions/1636</PackageReleaseNotes>
+    <PackageProjectUrl>https://github.com/NordicScreen/npoi-simple</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/NordicScreen/npoi-simple/releases</PackageReleaseNotes>
     <Copyright>Nissl LLC</Copyright>
     <PackageTags>xlsx xls Excel Word docx office ole</PackageTags>
 
@@ -28,6 +28,9 @@
 
   <PropertyGroup Label="XML Documentation" Condition=" '$(Configuration)' == 'Release' ">
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Label="XML Documentation Warnings">
     <NoWarn>$(NoWarn);CS0419</NoWarn> <!-- Ambiguous reference in cref attribute -->
     <NoWarn>$(NoWarn);CS1570</NoWarn> <!-- XML comment has badly formed XML -->
     <NoWarn>$(NoWarn);CS1572</NoWarn> <!-- XML comment has a param tag for XXX, but there is no parameter by that name -->

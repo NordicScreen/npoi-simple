@@ -1,0 +1,42 @@
+# Publishes the NPOI.Basics and NPOI.Graphics.SkiaSharp packages to GitHub Packages.
+# Publishing to nuget.org is intentionally not configured for this fork.
+
+name: Publish
+
+on:
+	push:
+		branches:
+			- main
+			- master
+			- 'release*'
+			- 'poi/*'
+		tags:
+			- 'v*'
+	workflow_dispatch:
+
+permissions:
+	contents: read
+	packages: write
+
+jobs:
+	publish:
+		name: publish
+		runs-on: ubuntu-latest
+		timeout-minutes: 30
+		steps:
+			- uses: actions/checkout@v4
+				with:
+					fetch-depth: 0
+			- uses: actions/setup-dotnet@v5
+				with:
+					dotnet-version: |
+						10.0
+			- name: 'Run: Clean, Compile, Pack, Publish'
+				run: ./build.cmd Clean Compile Pack Publish
+				env:
+					GitHubToken: ${{ secrets.GITHUB_TOKEN }}
+			- name: 'Upload: packages'
+				uses: actions/upload-artifact@v4
+				with:
+					name: packages
+					path: publish/*.nupkg

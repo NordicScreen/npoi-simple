@@ -102,9 +102,8 @@ partial class Build : NukeBuild
                 .SetDeterministic(IsServerBuild)
                 .SetContinuousIntegrationBuild(IsServerBuild)
                 .SetVerbosity(DotNetVerbosity.minimal)
-                // obsolete missing XML documentation comment, XML comment on not valid language element, XML comment has badly formed XML, no matching tag in XML comment
-                // need to use escaped separator in order for this to work
-                .AddProperty("NoWarn", string.Join("%3B", new [] { 169, 612, 618, 1591, 1587, 1570, 1572, 1573, 1574 }))
+                // NoWarn is intentionally not set here: passing it on the command line
+                // replaces (rather than extends) the curated list in Directory.Build.props
                 .SetProjectFile(Solution)
                 // ensure we don't generate too much output in CI run
                 // 0  Turns off emission of all warning messages
@@ -149,37 +148,79 @@ partial class Build : NukeBuild
             // make sure we make fresh build
             DeleteCompilationArtifacts();
 
-            var packTarget = Solution.GetProject("NPOI.Pack");
-
-            DotNetPack(_ =>
+            var packTargets = new[]
             {
-                var packSettings = _
-                    .SetProject(packTarget)
-                    .SetConfiguration(Configuration)
-                    .SetOutputDirectory(ArtifactsDirectory)
-                    .SetDeterministic(IsServerBuild)
-                    .SetContinuousIntegrationBuild(IsServerBuild)
-                    // obsolete missing XML documentation comment, XML comment on not valid language element, XML comment has badly formed XML, no matching tag in XML comment
-                    // need to use escaped separator in order for this to work
-                    .AddProperty("NoWarn", string.Join("%3B", new[] { 169, 612, 618, 1591, 1587, 1570, 1572, 1573, 1574 }))
-                    .SetProperty("EnablePackageValidation", "false")
-                    // ensure we don't generate too much output in CI run
-                    // 0  Turns off emission of all warning messages
-                    // 1  Displays severe warning messages
-                    .SetWarningLevel(IsServerBuild ? 0 : 1);
+                (string)Solution.GetProject("NPOI.Pack").Path,
+                (string)(RootDirectory / "graphics" / "NPOI.Graphics.SkiaSharp" / "NPOI.Graphics.SkiaSharp.csproj")
+            };
 
-                if (IsPublishBuild)
+            foreach (var packProject in packTargets)
+            {
+                DotNetPack(_ =>
                 {
-                    // force version from tag/branch
-                    packSettings = packSettings
-                        .SetAssemblyVersion(PublishVersion)
-                        .SetFileVersion(PublishVersion)
-                        .SetInformationalVersion(PublishVersion)
-                        .SetVersionSuffix(VersionSuffix)
-                        .SetVersionPrefix(PublishVersion);
-                }
+                    var packSettings = _
+                        .SetProject(packProject)
+                        .SetConfiguration(Configuration)
+                        .SetOutputDirectory(ArtifactsDirectory)
+                        .SetDeterministic(IsServerBuild)
+                        .SetContinuousIntegrationBuild(IsServerBuild)
+                        // Pack always runs on freshly deleted compilation artifacts, and
+                        // NuGetizer can read an assembly's .pdb while another MSBuild node
+                        // is still copying it to the output directory, which intermittently
+                        // fails with "Could not find file ...NPOI.Core.pdb". Restricting the
+                        // build to a single node avoids that race.
+                        .AddProcessAdditionalArguments("-maxcpucount:1")
+                        // NoWarn is intentionally not set here: passing it on the command line
+                        // replaces (rather than extends) the curated list in Directory.Build.props
+                        .SetProperty("EnablePackageValidation", "false")
+                        // ensure we don't generate too much output in CI run
+                        // 0  Turns off emission of all warning messages
+                        // 1  Displays severe warning messages
+                        .SetWarningLevel(IsServerBuild ? 0 : 1);
 
-                return packSettings;
-            });
+                    if (IsPublishBuild)
+                    {
+                        // force version from tag/branch
+                        packSettings = packSettings
+                            .SetAssemblyVersion(PublishVersion)
+                            .SetFileVersion(PublishVersion)
+                            .SetInformationalVersion(PublishVersion)
+                            .SetVersionSuffix(VersionSuffix)
+                            .SetVersionPrefix(PublishVersion);
+                    }
+                    else
+                    {
+                        // no tag/release branch, so keep the version prefix from
+                        // Directory.Build.props and mark the package as a preview
+                        packSettings = packSettings.SetVersionSuffix(VersionSuffix);
+                    }
+
+                    return packSettings;
+                });
+            }
+        });
+
+    /// <summary>
+    /// Pushes the packed artifacts to GitHub Packages for this repository owner.
+    /// Publishing to nuget.org is intentionally not wired up.
+    /// </summary>
+    Target Publish => _ => _
+        .DependsOn(Pack)
+        .Requires(() => GitHubToken)
+        .OnlyWhenDynamic(() => IsServerBuild)
+        .Executes(() =>
+        {
+            DotNetNuGetPush(_ => _
+                .SetSource("https://nuget.pkg.github.com/NordicScreen/index.json")
+                .SetApiKey(GitHubToken)
+                .EnableSkipDuplicate()
+                .CombineWith(ArtifactsDirectory.GlobFiles("*.nupkg"),
+                    (settings, package) => settings.SetTargetPath(package)));
+
+            // nuget.org publishing is deliberately disabled for this fork.
+            // DotNetNuGetPush(_ => _
+            //     .SetSource("https://api.nuget.org/v3/index.json")
+            //     .SetApiKey(NuGetApiKey)
+            //     ...);
         });
 }

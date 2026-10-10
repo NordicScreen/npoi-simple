@@ -5,7 +5,9 @@
   <PropertyGroup>
     <TargetFrameworks>net472;netstandard2.0;netstandard2.1;net8.0;net10.0</TargetFrameworks>
     <IncludeBuildOutput>false</IncludeBuildOutput>
-    <PackageId>NPOI</PackageId>
+    <PackageId>NPOI.Basics</PackageId>
+    <Title>NPOI.Basics</Title>
+    <Description>.NET port of Apache POI, with no dependency on any graphics library. Text measurement and image sizing are provided through pluggable providers - see the NPOI.Graphics.SkiaSharp package.</Description>
     <OutputPath>..\solution\$(Configuration)\</OutputPath>
   </PropertyGroup>
 

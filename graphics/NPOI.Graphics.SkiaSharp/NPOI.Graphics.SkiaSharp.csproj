@@ -6,8 +6,10 @@
 		<SignAssembly>true</SignAssembly>
 		<AssemblyOriginatorKeyFile>..\..\npoi.snk</AssemblyOriginatorKeyFile>
 		<OutputPath>..\..\solution\$(Configuration)\</OutputPath>
+		<PackageId>NPOI.Graphics.SkiaSharp</PackageId>
 		<Title>NPOI.Graphics.SkiaSharp</Title>
-		<Description>SkiaSharp based font and image providers for NPOI.</Description>
+		<Description>SkiaSharp based font and image providers for NPOI. Register them with GraphicsProvider to enable text measurement (AutoSizeColumn) and image sizing.</Description>
+		<PackageTags>xlsx xls Excel Word docx office ole skiasharp graphics fonts</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -15,7 +17,27 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\main\NPOI.Core.csproj" />
+		<!--
+				Build against the local NPOI.Core project, but do not inline its assemblies
+				into this package. Referencing the packable NPOI.Pack project makes NuGetizer
+				emit a dependency on the NPOI.Basics package, which is what ships NPOI.Core.dll.
+		-->
+		<ProjectReference Include="..\..\main\NPOI.Core.csproj" Pack="false" />
+		<ProjectReference Include="..\..\solution\NPOI.Pack.csproj" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<!--
+			Directory.Build.props adds these with paths relative to a project one level
+			below the repository root. This project is nested one level deeper, so the
+			inherited items point at non-existent paths and must be re-rooted.
+	-->
+	<ItemGroup>
+		<None Remove="..\LICENSE" />
+		<None Remove="..\build\README.md" />
+		<None Include="..\..\LICENSE" Pack="true" Visible="false" PackagePath="" />
+		<None Include="..\..\build\README.md" Pack="true" Visible="false" PackagePath="" />
+		<None Include="..\..\logo\*.png" Pack="true" Visible="false" PackagePath="logo\" />
+		<None Include="..\..\logo\*.jpg" Pack="true" Visible="false" PackagePath="logo\" />
 	</ItemGroup>
 
 </Project>
