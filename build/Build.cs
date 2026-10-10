@@ -49,13 +49,24 @@ partial class Build : NukeBuild
 
     protected override void OnBuildInitialized()
     {
+        // Use dot-separated SemVer 2.0 pre-release identifiers. Purely numeric
+        // identifiers are then compared numerically rather than as text, so
+        // consecutive previews order correctly in NuGet clients.
+        //
+        // On GitHub Actions the workflow run number is a monotonically increasing
+        // counter, which makes a much better build number than a timestamp. Locally
+        // there is no such counter, so fall back to a UTC timestamp.
+        var buildNumber = Host is GitHubActions
+            ? GitHubActions.Instance.RunNumber.ToString()
+            : $"{DateTime.UtcNow:yyyyMMdd}.{DateTime.UtcNow:HHmm}";
+
         VersionSuffix = !IsPublishBuild
-            ? $"preview-{DateTime.UtcNow:yyyyMMdd-HHmm}"
+            ? $"preview.{buildNumber}"
             : "";
 
         if (IsLocalBuild)
         {
-            VersionSuffix = $"dev-{DateTime.UtcNow:yyyyMMdd-HHmm}";
+            VersionSuffix = $"dev.{buildNumber}";
         }
 
         Serilog.Log.Information("BUILD SETUP");
