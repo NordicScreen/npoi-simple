@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Nuke.Common;
@@ -8,6 +9,7 @@ using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
+using Nuke.Common.Tools.Git;
 using Nuke.Common.Utilities.Collections;
 
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
@@ -30,7 +32,37 @@ partial class Build : NukeBuild
 
     static AbsolutePath ArtifactsDirectory => RootDirectory / "publish";
 
-    string TagVersion => GitRepository.Tags.SingleOrDefault(x => x.StartsWith("v"))?[1..];
+    // GitRepository.Tags is not populated from the local repository, and on a
+    // tag-triggered GitHub Actions run GitRepository.Branch is "refs/tags/<tag>"
+    // rather than a branch. So resolve the tag from the CI ref first, then fall
+    // back to asking git directly for the tags pointing at HEAD.
+    string TagVersion => TagNames
+        .Where(x => x.StartsWith("v"))
+        .Select(x => x[1..])
+        .OrderByDescending(x => x, StringComparer.OrdinalIgnoreCase)
+        .FirstOrDefault();
+
+    static IEnumerable<string> TagNames
+    {
+        get
+        {
+            var reference = Environment.GetEnvironmentVariable("GITHUB_REF");
+            if (reference is not null)
+            {
+                // On CI the triggering ref is authoritative. A branch push whose
+                // HEAD also carries the release tag must stay a preview, otherwise
+                // the branch and tag runs would both try to publish the same
+                // immutable package version.
+                return reference.StartsWith("refs/tags/")
+                    ? [reference["refs/tags/".Length..]]
+                    : [];
+            }
+
+            return GitTasks.Git("tag --points-at HEAD", logInvocation: false, logOutput: false)
+                .Select(x => x.Text.Trim())
+                .Where(x => !string.IsNullOrEmpty(x));
+        }
+    }
 
     string BranchVersion => GitRepository.Branch?.StartsWith("release") == true
         ? GitRepository.Branch[7..]
@@ -74,6 +106,8 @@ partial class Build : NukeBuild
         Serilog.Log.Information("\tConfiguration: {Configuration}", Configuration);
         Serilog.Log.Information("\tVersion suffix: {VersionSuffix}", VersionSuffix);
         Serilog.Log.Information("\tPublish version: {PublishVersion}", PublishVersion);
+        Serilog.Log.Information("\tTags on HEAD: {Tags}", string.Join(", ", TagNames));
+        Serilog.Log.Information("\tBranch: {Branch}", GitRepository.Branch);
 
         Serilog.Log.Information("Build environment:");
         Serilog.Log.Information("\tHost: {Host}", Host.GetType());
