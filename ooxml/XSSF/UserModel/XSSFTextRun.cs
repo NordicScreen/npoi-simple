@@ -17,7 +17,7 @@
 using System;
 using NPOI.OpenXmlFormats.Dml;
 using NPOI.Util;
-using SkiaSharp;
+using NPOI.Common.Graphics;
 
 namespace NPOI.XSSF.UserModel
 {
@@ -62,7 +62,7 @@ namespace NPOI.XSSF.UserModel
             return _r;
         }
 
-        public SKColor FontColor
+        public NPOIColor FontColor
         {
             get
             {
@@ -75,11 +75,11 @@ namespace NPOI.XSSF.UserModel
                     {
                         CT_SRgbColor clr = fill.srgbClr;
                         byte[] rgb = clr.val;
-                        return new SKColor((byte)(0xFF & rgb[0]), (byte)(0xFF & rgb[1]), (byte)(0xFF & rgb[2]));
+                        return new NPOIColor((byte)(0xFF & rgb[0]), (byte)(0xFF & rgb[1]), (byte)(0xFF & rgb[2]));
                     }
                 }
 
-                return new SKColor(0, 0, 0);
+                return new NPOIColor(0, 0, 0);
             }
             set
             {

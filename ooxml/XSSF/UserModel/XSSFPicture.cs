@@ -25,7 +25,7 @@ using NPOI.SS.UserModel;
 using NPOI.Util;
 using System.Xml;
 using NPOI.SS.Util;
-using SkiaSharp;
+using NPOI.Common.Graphics;
 
 namespace NPOI.XSSF.UserModel
 {
@@ -252,7 +252,7 @@ namespace NPOI.XSSF.UserModel
          */
         public IClientAnchor GetPreferredSize(double scaleX, double scaleY)
         {
-            SKSizeI dim = ImageUtils.SetPreferredSize(this, scaleX, scaleY);
+            NPOISize dim = ImageUtils.SetPreferredSize(this, scaleX, scaleY);
             CT_PositiveSize2D size2d = ctPicture.spPr.xfrm.ext;
             size2d.cx = (dim.Width);
             size2d.cy = (dim.Height);
@@ -267,7 +267,7 @@ namespace NPOI.XSSF.UserModel
          *
          * @return image dimension in pixels
          */
-        protected static SKSizeI GetImageDimension(PackagePart part, PictureType type)
+        protected static NPOISize GetImageDimension(PackagePart part, PictureType type)
         {
             try
             {
@@ -280,7 +280,7 @@ namespace NPOI.XSSF.UserModel
             {
                 //return a "singulariry" if ImageIO failed to read the image
                 logger.Log(POILogger.WARN, e);
-                return new SKSizeI();
+                return new NPOISize();
             }
         }
         /**
@@ -288,7 +288,7 @@ namespace NPOI.XSSF.UserModel
          *
          * @return image dimension in pixels
          */
-        public SKSizeI GetImageDimension()
+        public NPOISize GetImageDimension()
         {
             XSSFPictureData picData = PictureData as XSSFPictureData;
             return GetImageDimension(picData.GetPackagePart(), picData.PictureType);

@@ -277,7 +277,7 @@ namespace TestCases.HSSF.UserModel
         {
             HSSFWorkbook wb = new HSSFWorkbook();
 
-            var color = new SKColor(0, 0x6B, 0x6B); //decode("#006B6B");
+            var color = new NPOI.Common.Graphics.NPOIColor(0, 0x6B, 0x6B); //decode("#006B6B");
             HSSFPalette palette = wb.GetCustomPalette();
 
             HSSFColor hssfColor = palette.FindColor(color.Red, color.Green, color.Blue);

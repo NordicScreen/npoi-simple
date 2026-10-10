@@ -20,7 +20,7 @@ namespace TestCases.XSSF.UserModel
     using NPOI.SS.UserModel;
     using NUnit.Framework;using NUnit.Framework.Legacy;
     using NPOI.XSSF.UserModel;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
 
     [TestFixture]
     public class TestXSSFSimpleShape
@@ -39,7 +39,7 @@ namespace TestCases.XSSF.UserModel
                 XSSFRichTextString rt = new XSSFRichTextString("Test String");
 
                 XSSFFont font = wb.CreateFont() as XSSFFont;
-                SKColor color = new SKColor(0, 255, 255);
+                NPOIColor color = new NPOIColor(0, 255, 255);
                 font.SetColor(new XSSFColor(color, wb.GetStylesSource().IndexedColors));
                 font.FontName = (/*setter*/"Arial");
                 rt.ApplyFont(font);

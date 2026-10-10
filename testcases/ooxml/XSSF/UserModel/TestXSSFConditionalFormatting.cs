@@ -4,7 +4,7 @@ using NPOI.XSSF;
 using NPOI.XSSF.UserModel;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
-using SkiaSharp;
+using NPOI.Common.Graphics;
 using System;
 /*
 *  ====================================================================
@@ -64,7 +64,7 @@ namespace TestCases.XSSF.UserModel
             TestReadOffice2007("NewStyleConditionalFormattings.xlsx");
         }
 
-        private static SKColor PEAK_ORANGE = new(255, 239, 221);
+        private static NPOIColor PEAK_ORANGE = new(255, 239, 221);
 
         [Test]
         public void TestFontFormattingColor()

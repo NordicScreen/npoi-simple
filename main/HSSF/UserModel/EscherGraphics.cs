@@ -22,7 +22,7 @@ namespace NPOI.HSSF.UserModel
     using NPOI.HSSF.Util;
     using NPOI.Util;
     using NPOI.SS.UserModel;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
 
     /**
      * Translates Graphics calls into escher calls.  The translation Is lossy so
@@ -64,9 +64,10 @@ namespace NPOI.HSSF.UserModel
         private HSSFWorkbook workbook;
         private float verticalPointsPerPixel = 1.0f;
         private float verticalPixelsPerPoint;
-        private SKColor foreground;
-        private SKColor background = new SKColor(255, 255, 255);
-        private SKFont font;
+        private NPOIColor foreground;
+        private NPOIColor background = new NPOIColor(255, 255, 255);
+        private FontRequest font;
+        private readonly IFontProvider fontProvider;
         private static POILogger Logger = POILogFactory.GetLogger(typeof(EscherGraphics));
 
         // Default dpi
@@ -79,11 +80,13 @@ namespace NPOI.HSSF.UserModel
          * @param workbook              The workbook we are using.
          * @param forecolor             The foreground color to use as default.
          * @param verticalPointsPerPixel    The font multiplier.  (See class description for information on how this works.).
+         * @param fontProvider          The provider used to measure text, or null to use the registered one.
          */
-        public EscherGraphics(HSSFShapeGroup escherGroup, HSSFWorkbook workbook, SKColor forecolor, float verticalPointsPerPixel)
+        public EscherGraphics(HSSFShapeGroup escherGroup, HSSFWorkbook workbook, NPOIColor forecolor, float verticalPointsPerPixel, IFontProvider fontProvider = null)
         {
             this.escherGroup = escherGroup;
             this.workbook = workbook;
+            this.fontProvider = fontProvider;
             this.verticalPointsPerPixel = verticalPointsPerPixel;
             this.verticalPixelsPerPoint = 1 / verticalPointsPerPixel;
             this.font = CreateFont("Arial", 10);
@@ -100,13 +103,14 @@ namespace NPOI.HSSF.UserModel
          * @param verticalPointsPerPixel    The font multiplier.  (See class description for information on how this works.).
          * @param font                  The font to use.
          */
-        EscherGraphics(HSSFShapeGroup escherGroup, HSSFWorkbook workbook, SKColor foreground, SKFont font, float verticalPointsPerPixel)
+        EscherGraphics(HSSFShapeGroup escherGroup, HSSFWorkbook workbook, NPOIColor foreground, FontRequest font, float verticalPointsPerPixel, IFontProvider fontProvider = null)
         {
             this.escherGroup = escherGroup;
             this.workbook = workbook;
             this.foreground = foreground;
             //        this.background = background;
             this.font = font;
+            this.fontProvider = fontProvider;
             this.verticalPointsPerPixel = verticalPointsPerPixel;
             this.verticalPixelsPerPoint = 1 / verticalPointsPerPixel;
         }
@@ -131,18 +135,12 @@ namespace NPOI.HSSF.UserModel
 
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                if (null != font)
-                {
-                    font = null;
-                }
-            }
+            // Nothing to release: the font is held as a value-type descriptor.
         }
 
         public void ClearRect(int x, int y, int width, int height)
         {
-            SKColor color = foreground;
+            NPOIColor color = foreground;
             SetColor(background);
             FillRect(x, y, width, height);
             SetColor(color);
@@ -174,10 +172,10 @@ namespace NPOI.HSSF.UserModel
                 Logger.Log(POILogger.WARN, "DrawArc not supported");
         }
 
-        public bool DrawImage(SKBitmap img,
+        public bool DrawImage(IDecodedImage img,
                           int dx1, int dy1, int dx2, int dy2,
                           int sx1, int sy1, int sx2, int sy2,
-                          SKColor bgcolor)
+                          NPOIColor bgcolor)
         {
             if (Logger.Check(POILogger.WARN))
                 Logger.Log(POILogger.WARN, "DrawImage not supported");
@@ -187,7 +185,7 @@ namespace NPOI.HSSF.UserModel
             //return true;
         }
 
-        public bool DrawImage(SKBitmap img,
+        public bool DrawImage(IDecodedImage img,
                           int dx1, int dy1, int dx2, int dy2,
                           int sx1, int sy1, int sx2, int sy2)
         {
@@ -199,22 +197,22 @@ namespace NPOI.HSSF.UserModel
             //return true;
         }
 
-        public bool DrawImage(SKBitmap image, int i, int j, int k, int l, SKColor color)
+        public bool DrawImage(IDecodedImage image, int i, int j, int k, int l, NPOIColor color)
         {
             return DrawImage(image, i, j, i + k, j + l, 0, 0, image.Width, image.Height, color);
         }
 
-        public bool DrawImage(SKBitmap image, int i, int j, int k, int l)
+        public bool DrawImage(IDecodedImage image, int i, int j, int k, int l)
         {
             return DrawImage(image, i, j, i + k, j + l, 0, 0, image.Width, image.Height);
         }
 
-        public bool DrawImage(SKBitmap image, int i, int j, SKColor color)
+        public bool DrawImage(IDecodedImage image, int i, int j, NPOIColor color)
         {
             return DrawImage(image, i, j, image.Width, image.Height, color);
         }
 
-        public bool DrawImage(SKBitmap image, int i, int j)
+        public bool DrawImage(IDecodedImage image, int i, int j)
         {
             return DrawImage(image, i, j, image.Width, image.Height);
         }
@@ -263,14 +261,9 @@ namespace NPOI.HSSF.UserModel
             return result;
         }
 
-        private static SKFont CreateFont(string fontName, float sizeInPoints)
+        private static FontRequest CreateFont(string fontName, float sizeInPoints)
         {
-            var fontStyle = SKFontStyle.Normal;
-            var typeface = SKTypeface.FromFamilyName(fontName, fontStyle)
-                ?? SKTypeface.FromFamilyName("Arial", fontStyle)
-                ?? SKTypeface.Default;
-            float textSizePx = sizeInPoints * dpi / 72f;
-            return new SKFont(typeface, textSizePx);
+            return new FontRequest(fontName, sizeInPoints, false, false, dpi);
         }
 
         public void DrawPolyline(int[] xPoints, int[] yPoints, int nPoints)
@@ -296,14 +289,14 @@ namespace NPOI.HSSF.UserModel
         {
             if (string.IsNullOrEmpty(str))
                 return;
-            // Convert font size from pixels back to points for the HSSF font height
-            float fontSizeInPoints = font.Size * 72f / dpi;
-            string fontName = font.Typeface.FamilyName.Equals("SansSerif", StringComparison.OrdinalIgnoreCase) ? "Arial" : font.Typeface.FamilyName;
-            using SKFont excelFont = CreateFont(fontName, (int)(fontSizeInPoints / verticalPixelsPerPoint));
+            float fontSizeInPoints = font.SizeInPoints;
+            string fontName = font.FontName.Equals("SansSerif", StringComparison.OrdinalIgnoreCase) ? "Arial" : font.FontName;
+            FontRequest excelFont = CreateFont(fontName, (int)(fontSizeInPoints / verticalPixelsPerPoint));
+            using (IMeasuredFont measuredFont = GraphicsProvider.ResolveFont(fontProvider).GetFont(excelFont))
             {
-                int width = (int)((excelFont.MeasureText(str) * 8) + 12);
-                int height = (int)((font.Size / verticalPixelsPerPoint) + 6) * 2;
-                y -= Convert.ToInt32((font.Size / verticalPixelsPerPoint) + 2 * verticalPixelsPerPoint);    // we want to Draw the shape from the top-left
+                int width = (int)((measuredFont.MeasureText(str) * 8) + 12);
+                int height = (int)((font.SizeInPixels / verticalPixelsPerPoint) + 6) * 2;
+                y -= Convert.ToInt32((font.SizeInPixels / verticalPixelsPerPoint) + 2 * verticalPixelsPerPoint);    // we want to Draw the shape from the top-left
                 HSSFTextbox textbox = escherGroup.CreateTextbox(new HSSFChildAnchor(x, y, x + width, y + height));
                 textbox.IsNoFill = (true);
                 textbox.LineStyle = LineStyle.None;
@@ -314,20 +307,20 @@ namespace NPOI.HSSF.UserModel
             }
         }
 
-        private HSSFFont MatchFont(SKFont font)
+        private HSSFFont MatchFont(FontRequest font)
         {
             HSSFColor hssfColor = workbook.GetCustomPalette()
                     .FindColor((byte)foreground.Red, (byte)foreground.Green, (byte)foreground.Blue);
             if (hssfColor == null)
                 hssfColor = workbook.GetCustomPalette().FindSimilarColor((byte)foreground.Red, (byte)foreground.Green, (byte)foreground.Blue);
-            bool bold = font.Typeface.FontStyle.Weight >= (int)SKFontStyleWeight.Bold;
-            bool italic = font.Typeface.FontStyle.Slant != SKFontStyleSlant.Upright;
-            // Convert pixel size back to points (multiply by 20 for Excel's half-point unit)
-            float sizeInPoints = font.Size * 72f / dpi;
+            bool bold = font.IsBold;
+            bool italic = font.IsItalic;
+            // Multiply by 20 for Excel's twentieth-of-a-point unit
+            float sizeInPoints = font.SizeInPoints;
             HSSFFont hssfFont = (HSSFFont)workbook.FindFont(bold,
                         hssfColor.Indexed,
                         (short)(sizeInPoints * 20),
-                        font.Typeface.FamilyName,
+                        font.FontName,
                         italic,
                         false,
                         (short)NPOI.SS.UserModel.FontSuperScript.None,
@@ -339,7 +332,7 @@ namespace NPOI.HSSF.UserModel
                 hssfFont.IsBold = bold;
                 hssfFont.Color = (hssfColor.Indexed);
                 hssfFont.FontHeight = ((short)(sizeInPoints * 20));
-                hssfFont.FontName = font.Typeface.FamilyName;
+                hssfFont.FontName = font.FontName;
                 hssfFont.IsItalic = (italic);
                 hssfFont.IsStrikeout = (false);
                 hssfFont.TypeOffset = 0;
@@ -445,7 +438,7 @@ namespace NPOI.HSSF.UserModel
                 Logger.Log(POILogger.WARN, "FillRoundRect not supported");
         }
 
-        public SKRectI Clip
+        public NPOIRectangle Clip
         {
             get
             {
@@ -453,15 +446,15 @@ namespace NPOI.HSSF.UserModel
             }
         }
 
-        public SKRectI ClipBounds
+        public NPOIRectangle ClipBounds
         {
             get
             {
-                return SKRectI.Empty;
+                return NPOIRectangle.Empty;
             }
         }
 
-        public SKColor Color
+        public NPOIColor Color
         {
             get
             {
@@ -469,7 +462,7 @@ namespace NPOI.HSSF.UserModel
             }
         }
 
-        public SKFont Font
+        public FontRequest Font
         {
             get
             {
@@ -484,21 +477,21 @@ namespace NPOI.HSSF.UserModel
 
         public void SetClip(int x, int y, int width, int height)
         {
-            SetClip(((SKRectI.Create(x, y, width, height))));
+            SetClip(((NPOIRectangle.Create(x, y, width, height))));
         }
 
-        public void SetClip(SKRectI shape)
+        public void SetClip(NPOIRectangle shape)
         {
             // ignore... not implemented
             throw new NotImplementedException();
         }
 
-        public void SetColor(SKColor color)
+        public void SetColor(NPOIColor color)
         {
             foreground = color;
         }
 
-        public void SetFont(SKFont f)
+        public void SetFont(FontRequest f)
         {
             font = f;
         }
@@ -511,7 +504,7 @@ namespace NPOI.HSSF.UserModel
             throw new NotImplementedException();
         }
 
-        public void SetXORMode(SKColor color)
+        public void SetXORMode(NPOIColor color)
         {
             if (Logger.Check(POILogger.WARN))
                 Logger.Log(POILogger.WARN, "SetXORMode not supported");
@@ -527,7 +520,7 @@ namespace NPOI.HSSF.UserModel
             throw new NotImplementedException();
         }
 
-        public SKColor Background
+        public NPOIColor Background
         {
             get
             {

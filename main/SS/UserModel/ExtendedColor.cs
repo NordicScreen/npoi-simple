@@ -22,7 +22,7 @@ using Cysharp.Text;
     using NPOI.HSSF.Util;
     using NPOI.SS.UserModel;
     using NPOI.Util;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
 
     /**
      * Represents a XSSF-style color (based on either a
@@ -31,7 +31,7 @@ using Cysharp.Text;
      */
     public abstract class ExtendedColor : IColor
     {
-        protected void SetColor(SKColor clr)
+        protected void SetColor(NPOIColor clr)
         {
             RGB = (new byte[] { clr.Red, clr.Green, clr.Blue });
         }

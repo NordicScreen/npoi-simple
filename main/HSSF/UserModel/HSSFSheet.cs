@@ -36,7 +36,7 @@ namespace NPOI.HSSF.UserModel
     using NPOI.SS.UserModel.Helpers;
     using NPOI.HSSF.UserModel.helpers;
 
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
     using System.Data;
 
     /// <summary>
@@ -2481,13 +2481,16 @@ namespace NPOI.HSSF.UserModel
             }
         }
         /// <summary>
-        /// Convert HSSFFont to Font.
+        /// Convert HSSFFont to a measurable font.
         /// </summary>
         /// <param name="font1">The font.</param>
+        /// <param name="fontProvider">
+        /// The provider to resolve the font with, or <c>null</c> to use the registered one.
+        /// </param>
         /// <returns></returns>
-        public SKFont HSSFFont2Font(HSSFFont font1)
+        public IMeasuredFont HSSFFont2Font(HSSFFont font1, IFontProvider fontProvider = null)
         {
-            return SheetUtil.IFont2Font(font1);
+            return SheetUtil.IFont2Font(font1, fontProvider);
         }
 
         /// <summary>

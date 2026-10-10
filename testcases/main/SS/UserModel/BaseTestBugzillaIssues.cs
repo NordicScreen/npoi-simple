@@ -24,6 +24,7 @@ namespace TestCases.SS.UserModel
     using NPOI.Util;
     using NUnit.Framework;using NUnit.Framework.Legacy;
     using SkiaSharp;
+    using NPOI.Common.Graphics;
     using System;
     using System.Collections.Generic;
     using System.IO;
@@ -494,18 +495,16 @@ namespace TestCases.SS.UserModel
 
             //TextLayout layout = new TextLayout(str.getIterator(), fontRenderContext);
             //width = ((layout.getBounds().getWidth() / 1) / 8);
-            using SKFont wfont = SheetUtil.IFont2Font(font);
-            using var paint = new SKPaint { Typeface = wfont.Typeface, TextSize = wfont.Size };
-            width = paint.MeasureText(txt);
+            using IMeasuredFont wfont = SheetUtil.IFont2Font(font);
+            width = wfont.MeasureText(txt);
             return width;
         }
 
         private double ComputeCellWidthFixed(IFont font, String txt)
         {
             double width;
-            using SKFont wfont = SheetUtil.IFont2Font(font);
-            using var paint = new SKPaint { Typeface = wfont.Typeface, TextSize = wfont.Size };
-            width = paint.MeasureText(txt);
+            using IMeasuredFont wfont = SheetUtil.IFont2Font(font);
+            width = wfont.MeasureText(txt);
             return width;
         }
 

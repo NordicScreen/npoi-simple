@@ -21,6 +21,7 @@ using NPOI.Util;
 using NPOI.SS.Util;
 using System.IO;
 using TestCases.HSSF;
+using NPOI.Common.Graphics;
 using SkiaSharp;
 
 namespace TestCases.SS.UserModel
@@ -48,8 +49,8 @@ namespace TestCases.SS.UserModel
             IClientAnchor inpCA = input.ClientAnchor;
             IClientAnchor cmpCA = Compare.ClientAnchor;
 
-            SKSizeI inpDim = ImageUtils.GetDimensionFromAnchor(input);
-            SKSizeI cmpDim = ImageUtils.GetDimensionFromAnchor(Compare);
+            NPOISize inpDim = ImageUtils.GetDimensionFromAnchor(input);
+            NPOISize cmpDim = ImageUtils.GetDimensionFromAnchor(Compare);
 
             double emuPX = Units.EMU_PER_PIXEL;
 
@@ -64,7 +65,7 @@ namespace TestCases.SS.UserModel
             input.Resize();
             inpDim = ImageUtils.GetDimensionFromAnchor(input);
 
-            SKSizeI imgDim = input.GetImageDimension();
+            NPOISize imgDim = input.GetImageDimension();
 
             ClassicAssert.AreEqual(imgDim.Height, inpDim.Height / emuPX, 1, "the image height differs");
             ClassicAssert.AreEqual(imgDim.Width, inpDim.Width / emuPX, 1, "the image width differs");

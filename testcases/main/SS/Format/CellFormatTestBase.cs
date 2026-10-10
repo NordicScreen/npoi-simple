@@ -27,7 +27,7 @@ namespace TestCases.SS.Format
     using NPOI.Util;
     using TestCases.SS;
     using System.Diagnostics;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
 
     /**
      * This class is a base class for spreadsheet-based tests, such as are used for
@@ -57,9 +57,9 @@ namespace TestCases.SS.Format
         private static String[] COLOR_NAMES =
             {"Black", "Red", "Green", "Blue", "Yellow", "Cyan", "Magenta",
                     "White"};
-        private static SKColor[] COLORS = { SKColors.Black, SKColors.Red, SKColors.Green, SKColors.Blue, SKColors.Yellow, SKColors.Cyan, SKColors.Magenta, SKColors.Wheat };
+        private static NPOIColor[] COLORS = { NPOIColors.Black, NPOIColors.Red, NPOIColors.Green, NPOIColors.Blue, NPOIColors.Yellow, NPOIColors.Cyan, NPOIColors.Magenta, NPOIColors.Wheat };
 
-        public static SKColor TEST_COLOR = SKColors.Orange; //Darker();
+        public static NPOIColor TEST_COLOR = NPOIColors.Orange; //Darker();
 
         protected CellFormatTestBase(ITestDataProvider testDataProvider)
         {
@@ -70,7 +70,7 @@ namespace TestCases.SS.Format
         {
             public abstract Object GetValue(ICell cell);
 
-            public SKColor GetColor(ICell cell)
+            public NPOIColor GetColor(ICell cell)
             {
                 return TEST_COLOR;
             }
@@ -206,13 +206,13 @@ namespace TestCases.SS.Format
             return false;
         }
 
-        SKColor labelForeColor;
+        NPOIColor labelForeColor;
         private void tryFormat(int row, String expectedText, String desc,
                 CellValue getter, ICell cell)
         {
 
             Object value = getter.GetValue(cell);
-            SKColor testColor = getter.GetColor(cell);
+            NPOIColor testColor = getter.GetColor(cell);
 
             labelForeColor = testColor;
 
@@ -234,12 +234,12 @@ namespace TestCases.SS.Format
         }
 
         private String tryColor(String desc, String cname, CellValue getter,
-                Object value, String expectedText, SKColor expectedColor)
+                Object value, String expectedText, NPOIColor expectedColor)
         {
 
             if (cname != null)
                 desc = "[" + cname + "]" + desc;
-            SKColor origColor = labelForeColor;
+            NPOIColor origColor = labelForeColor;
             CellFormatPart format = new CellFormatPart(desc);
             CellFormatResult result = format.Apply(value);
             if (!result.Applies)
@@ -249,7 +249,7 @@ namespace TestCases.SS.Format
             }
 
             String actualText = result.Text;
-            SKColor actualColor = labelForeColor;
+            NPOIColor actualColor = labelForeColor;
             getter.Equivalent(expectedText, actualText, format);
             ClassicAssert.AreEqual(
                     expectedColor, actualColor, cname == null ? "no color" : "color " + cname);

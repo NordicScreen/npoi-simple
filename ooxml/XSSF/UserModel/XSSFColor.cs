@@ -21,7 +21,7 @@ using System.Text;
 using NPOI.Util;
 using NPOI.SS.UserModel;
 using NPOI.OpenXmlFormats.Spreadsheet;
-using SkiaSharp;
+using NPOI.Common.Graphics;
 using NPOI.OOXML.XSSF.UserModel;
 
 namespace NPOI.XSSF.UserModel
@@ -66,12 +66,12 @@ namespace NPOI.XSSF.UserModel
         {
         }
 
-        public XSSFColor(SKColor clr)
+        public XSSFColor(NPOIColor clr)
             : this(clr, new DefaultIndexedColorMap())
         {
         }
 
-        public XSSFColor(SKColor clr, IIndexedColorMap map)
+        public XSSFColor(NPOIColor clr, IIndexedColorMap map)
             : this(map) {
 
             ctColor.SetRgb(clr.Red, clr.Green, clr.Blue);

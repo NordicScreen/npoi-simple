@@ -26,7 +26,7 @@ namespace NPOI.HSSF.UserModel
     using NPOI.HSSF.Model;
     using NPOI.HSSF.Record;
     using NPOI.SS.Util;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
 
 
     /// <summary>
@@ -189,30 +189,39 @@ namespace NPOI.HSSF.UserModel
         /// </summary>
         /// <param name="r">The image.</param>
         /// <returns>the resolution</returns>
-        protected SKSizeI GetResolution(SKBitmap r)
+        protected NPOISize GetResolution(IDecodedImage r)
         {
-            // SKBitmap does not expose DPI metadata; return zeros so callers default to 96 DPI
-            return new SKSizeI(0, 0);
+            // A decoded image does not carry DPI metadata; return zeros so callers default to 96 DPI
+            return new NPOISize(0, 0);
         }
 
         /// <summary>
         /// Return the dimension of the embedded image in pixel
         /// </summary>
         /// <returns>image dimension</returns>
-        public SKSizeI GetImageDimension()
+        public NPOISize GetImageDimension()
+        {
+            return GetImageDimension(null);
+        }
+
+        /// <summary>
+        /// Return the dimension of the embedded image in pixel
+        /// </summary>
+        /// <param name="imageProvider">
+        /// The provider used to decode the image, or <c>null</c> to use the registered one.
+        /// </param>
+        /// <returns>image dimension</returns>
+        public NPOISize GetImageDimension(IImageProvider imageProvider)
         {
             InternalWorkbook iwb = (_patriarch.Sheet.Workbook as HSSFWorkbook).Workbook;
             EscherBSERecord bse = iwb.GetBSERecord(PictureIndex);
             byte[] data = bse.BlipRecord.PictureData;
             //int type = bse.BlipTypeWin32;
 
-            using(MemoryStream ms = RecyclableMemory.GetStream(data))
+            using(IDecodedImage img = GraphicsProvider.ResolveImage(imageProvider).Decode(data))
             {
-                using(SKBitmap img = SKBitmap.Decode(ms))
-                {
-                    if (img == null) return new SKSizeI();
-                    return new SKSizeI(img.Width, img.Height);
-                }
+                if (img == null) return new NPOISize();
+                return new NPOISize(img.Width, img.Height);
             }
         }
 

@@ -38,7 +38,7 @@ namespace TestCases.XSSF.EventUserModel
     {
         private static POIDataSamples _ssTests = POIDataSamples.GetSpreadSheetInstance();
 
-        [Test]
+        [Test, Parallelizable(ParallelScope.Self)]
         public void TestBasic()
         {
 

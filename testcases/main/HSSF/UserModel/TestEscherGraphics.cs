@@ -26,6 +26,9 @@ namespace TestCases.HSSF.UserModel
     using NUnit.Framework;using NUnit.Framework.Legacy;
     using SkiaSharp;
 
+    using NPOI.Common.Graphics;
+    using NPOI.Graphics.SkiaSharp;
+
 
     /**
      * Tests the capabilities of the EscherGraphics class.
@@ -59,39 +62,37 @@ namespace TestCases.HSSF.UserModel
             escherGroupA = patriarch.CreateGroup(new HSSFClientAnchor(0, 0, 1022, 255, (short)0, 0, (short)0, 0));
             escherGroupB = patriarch.CreateGroup(new HSSFClientAnchor(20, 30, 500, 200, (short)0, 0, (short)0, 0));
             //        escherGroup = new HSSFShapeGroup(null, new HSSFChildAnchor());
-            graphics = new EscherGraphics(this.escherGroupA, workbook, SKColors.Black, 1.0f);
+            graphics = new EscherGraphics(this.escherGroupA, workbook, NPOIColors.Black, 1.0f);
 
         }
 
         [Test]
         public void TestGetFont()
         {
-            SKFont f = graphics.Font;
+            FontRequest f = graphics.Font;
             // Font was created at 10pt; stored as pixels at 96 DPI
             float expectedSizePx = 10f * dpi / 72f;
-            ClassicAssert.AreEqual(expectedSizePx, f.Size, 0.01f);
-            ClassicAssert.IsFalse(f.Typeface.IsBold);
-            ClassicAssert.IsFalse(f.Typeface.IsItalic);
+            ClassicAssert.AreEqual(expectedSizePx, f.SizeInPixels, 0.01f);
+            ClassicAssert.IsFalse(f.IsBold);
+            ClassicAssert.IsFalse(f.IsItalic);
         }
 
         [Test]
         public void TestGetFontMetrics()
         {
-            SKFont f = graphics.Font;
-            using var paint = new SKPaint { Typeface = f.Typeface, TextSize = f.Size };
-            float width = paint.MeasureText("X");
+            FontRequest f = graphics.Font;
+            using IMeasuredFont measured = SkiaFontProvider.Instance.GetFont(f);
+            float width = measured.MeasureText("X");
             ClassicAssert.IsTrue(width > 0, "Expected font metrics width > 0, but got: " + width);
-            ClassicAssert.IsTrue(f.Size > 0);
-            ClassicAssert.IsFalse(f.Typeface.IsBold);
-            ClassicAssert.IsFalse(f.Typeface.IsItalic);
+            ClassicAssert.IsTrue(f.SizeInPixels > 0);
+            ClassicAssert.IsFalse(f.IsBold);
+            ClassicAssert.IsFalse(f.IsItalic);
         }
 
         [Test]
         public void TestSetFont()
         {
-            var fi = POIDataSamples.GetSpreadSheetInstance().GetFileInfo("Helvetica.ttf");
-            var typeface = SKTypeface.FromFile(fi.FullName);
-            var f = new SKFont(typeface, 12f * dpi / 72f);
+            var f = new FontRequest("Helvetica", 12f, false, false);
             graphics.SetFont(f);
             ClassicAssert.AreEqual(f, graphics.Font);
         }
@@ -99,8 +100,8 @@ namespace TestCases.HSSF.UserModel
         [Test]
         public void TestSetColor()
         {
-            graphics.SetColor(SKColors.Red);
-            ClassicAssert.AreEqual(SKColors.Red, graphics.Color);
+            graphics.SetColor(NPOIColors.Red);
+            ClassicAssert.AreEqual(NPOIColors.Red, graphics.Color);
         }
 
         [Test]

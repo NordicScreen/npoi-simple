@@ -118,7 +118,7 @@ namespace TestCases.SS.Formula.Functions
                 }
             });
         }
-        [Test, Order(2), NonParallelizable]
+        [Test, Order(2)]
         public void EvaluateAllFormulas()
         {
             var evaluator = new XSSFFormulaEvaluator(_workbook);

@@ -18,7 +18,7 @@ using NPOI.POIFS.FileSystem;
 using System.Collections;
 using System.Collections.Generic;
 using System;
-using SkiaSharp;
+using NPOI.Common.Graphics;
 
 namespace NPOI.Util
 {
@@ -96,9 +96,9 @@ namespace NPOI.Util
             CopyNodes(source.Root, target.Root, excepts);
         }
 
-        // SKColor.Empty represents "no color" (RGBA = 0,0,0,0), used as a sentinel value
+        // NPOIColor.Empty represents "no color" (RGBA = 0,0,0,0), used as a sentinel value
         // analogous to System.Drawing.Color.Empty
-        public static readonly SKColor Color_Empty = SKColor.Empty;
+        public static readonly NPOIColor Color_Empty = NPOIColor.Empty;
     }
 
 }

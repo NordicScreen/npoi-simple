@@ -24,7 +24,7 @@ namespace NPOI.SS.Format
     using System.Text.RegularExpressions;
     using System.Text;using Cysharp.Text;
     using System.Globalization;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
     using NPOI.Util;
 
     /**
@@ -45,11 +45,11 @@ namespace NPOI.SS.Format
      */
     public class CellFormatPart
     {
-        private readonly SKColor color;
+        private readonly NPOIColor color;
         private readonly CellFormatCondition condition;
         private readonly CellFormatter format;
         private readonly CellFormatType type;
-        private static readonly Dictionary<String, SKColor> NAMED_COLORS;
+        private static readonly Dictionary<String, NPOIColor> NAMED_COLORS;
         public static IEqualityComparer<String> CASE_INSENSITIVE_ORDER
                                              = new CaseInsensitiveComparator();
         private sealed class CaseInsensitiveComparator : IEqualityComparer<String>
@@ -75,7 +75,7 @@ namespace NPOI.SS.Format
         }
         static CellFormatPart()
         {
-            NAMED_COLORS = new Dictionary<String, SKColor>(CASE_INSENSITIVE_ORDER);
+            NAMED_COLORS = new Dictionary<String, NPOIColor>(CASE_INSENSITIVE_ORDER);
 
             var colors = HSSFColor.GetIndexHash();
             foreach (HSSFColor hc in colors.Values)
@@ -85,7 +85,7 @@ namespace NPOI.SS.Format
                 if (name.Equals(name.ToUpper()))
                 {
                     byte[] rgb = hc.RGB;
-                    SKColor c = new SKColor(rgb[0], rgb[1], rgb[2]);
+                    NPOIColor c = new NPOIColor(rgb[0], rgb[1], rgb[2]);
                     NAMED_COLORS.TryAdd(name, c);
                     if (name.IndexOf('_') > 0)
                     {
@@ -280,13 +280,13 @@ namespace NPOI.SS.Format
          *
          * @return The color specification or <tt>null</tt>.
          */
-        private static SKColor GetColor(Match m)
+        private static NPOIColor GetColor(Match m)
         {
             String cdesc = m.Groups[(COLOR_GROUP)].Value.ToUpper();
             if (cdesc == null || cdesc.Length == 0)
                 return POIUtils.Color_Empty;
-            SKColor c = POIUtils.Color_Empty;
-            if (NAMED_COLORS.TryGetValue(cdesc, out SKColor value))
+            NPOIColor c = POIUtils.Color_Empty;
+            if (NAMED_COLORS.TryGetValue(cdesc, out NPOIColor value))
                 c = value;
             //if (c == null)
             //    logger.Warning("Unknown color: " + quote(cdesc));
@@ -483,7 +483,7 @@ namespace NPOI.SS.Format
         {
             bool applies = Applies(value);
             String text;
-            SKColor textColor;
+            NPOIColor textColor;
             if (applies)
             {
                 text = format.Format(value);

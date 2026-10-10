@@ -113,7 +113,7 @@ namespace TestCases.XSSF.Extractor
             extractor.Close();
         }
 
-        [Test]
+        [Test, Parallelizable(ParallelScope.Self)]
         public void TestGetComplexText()
         {
 
@@ -215,7 +215,7 @@ namespace TestCases.XSSF.Extractor
         /// Test that we return the same output for unstyled numbers as the
         /// non-event-based XSSFExcelExtractor.
         /// </summary>
-        [Test]
+        [Test, Parallelizable(ParallelScope.Self)]
         public void TestUnstyledNumbersComparedToNonEventBasedExtractor()
         {
             String expectedOutput = "Sheet1\n99.99\n";

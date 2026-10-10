@@ -21,7 +21,7 @@ namespace NPOI.SS.Util
     using NPOI.HSSF.UserModel;
     using NPOI.SS.UserModel;
     using NPOI.Util;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
     
     /**
      * @author Yegor Kozlov
@@ -33,7 +33,7 @@ namespace NPOI.SS.Util
         public static int PIXEL_DPI = 96;
 
 
-        public static SKSizeI GetImageDimension(Stream is1)
+        public static NPOISize GetImageDimension(Stream is1, IImageProvider imageProvider = null)
         {
             byte[] data;
             using (var ms = new MemoryStream())
@@ -41,16 +41,16 @@ namespace NPOI.SS.Util
                 is1.CopyTo(ms);
                 data = ms.ToArray();
             }
-            using (SKBitmap img = SKBitmap.Decode(data))
+            using (IDecodedImage img = GraphicsProvider.ResolveImage(imageProvider).Decode(data))
             {
-                if (img == null) return new SKSizeI();
+                if (img == null) return new NPOISize();
                 int[] dpi = GetResolutionFromBytes(data);
 
                 //if DPI is zero then assume standard 96 DPI
                 //since cannot divide by zero
                 if (dpi[0] == 0) dpi[0] = PIXEL_DPI;
                 if (dpi[1] == 0) dpi[1] = PIXEL_DPI;
-                SKSizeI size = new SKSizeI();
+                NPOISize size = new NPOISize();
                 size.Width = img.Width * PIXEL_DPI / dpi[0];
                 size.Height = img.Height * PIXEL_DPI / dpi[1];
                 return size;
@@ -65,9 +65,9 @@ namespace NPOI.SS.Util
          *
          * @return image dimension in pixels
          */
-        public static SKSizeI GetImageDimension(Stream is1, PictureType type)
+        public static NPOISize GetImageDimension(Stream is1, PictureType type, IImageProvider imageProvider = null)
         {
-            SKSizeI size = new SKSizeI();
+            NPOISize size = new NPOISize();
 
             switch (type)
             {
@@ -82,7 +82,7 @@ namespace NPOI.SS.Util
                         is1.CopyTo(ms);
                         data = ms.ToArray();
                     }
-                    using (SKBitmap img = SKBitmap.Decode(data))
+                    using (IDecodedImage img = GraphicsProvider.ResolveImage(imageProvider).Decode(data))
                     {
                         if (img == null) return size;
                         int[] dpi = GetResolutionFromBytes(data);
@@ -194,9 +194,10 @@ namespace NPOI.SS.Util
         /**
          * @deprecated Use {@link #GetResolutionFromBytes(byte[])} instead.
          */
-        public static int[] GetResolution(SKBitmap r)
+        [Obsolete("Use GetResolutionFromBytes(byte[]) instead.")]
+        public static int[] GetResolution(IDecodedImage r)
         {
-            // SKBitmap does not expose DPI metadata; return zeros so callers default to 96 DPI
+            // A decoded image does not carry DPI metadata; return zeros so callers default to 96 DPI
             return new int[] { 0, 0 };
         }
 
@@ -207,7 +208,7 @@ namespace NPOI.SS.Util
          * @param scaleY the amount by which image height is multiplied relative to the original height.
          * @return the new Dimensions of the scaled picture in EMUs
          */
-        public static SKSizeI SetPreferredSize(IPicture picture, double scaleX, double scaleY)
+        public static NPOISize SetPreferredSize(IPicture picture, double scaleX, double scaleY, IImageProvider imageProvider = null)
         {
             IClientAnchor anchor = picture.ClientAnchor;
             bool isHSSF = (anchor is HSSFClientAnchor);
@@ -215,9 +216,9 @@ namespace NPOI.SS.Util
             ISheet sheet = picture.Sheet;
 
             // in pixel
-            SKSizeI imgSize = GetImageDimension(new MemoryStream(data.Data), data.PictureType);
+            NPOISize imgSize = GetImageDimension(new MemoryStream(data.Data), data.PictureType, imageProvider);
             // in emus
-            SKSizeI anchorSize = ImageUtils.GetDimensionFromAnchor(picture);
+            NPOISize anchorSize = ImageUtils.GetDimensionFromAnchor(picture);
             double scaledWidth = (scaleX == Double.MaxValue)
                 ? imgSize.Width : anchorSize.Width / Units.EMU_PER_PIXEL * scaleX;
             double scaledHeight = (scaleY == Double.MaxValue)
@@ -298,7 +299,7 @@ namespace NPOI.SS.Util
             anchor.Row2 = (/*setter*/row2);
             anchor.Dy2 = (/*setter*/dy2);
 
-            SKSizeI dim = new SKSizeI(
+            NPOISize dim = new NPOISize(
                 (int)Math.Round(scaledWidth * Units.EMU_PER_PIXEL),
                 (int)Math.Round(scaledHeight * Units.EMU_PER_PIXEL)
             );
@@ -312,7 +313,7 @@ namespace NPOI.SS.Util
          * @param picture the picture Containing the anchor
          * @return the dimensions in EMUs
          */
-        public static SKSizeI GetDimensionFromAnchor(IPicture picture)
+        public static NPOISize GetDimensionFromAnchor(IPicture picture)
         {
             IClientAnchor anchor = picture.ClientAnchor;
             bool isHSSF = (anchor is HSSFClientAnchor);
@@ -376,9 +377,7 @@ namespace NPOI.SS.Util
             w *= Units.EMU_PER_PIXEL;
             h *= Units.EMU_PER_PIXEL;
 
-            return new SKSizeI((int)Math.Round(w), (int)Math.Round(h));
-            //return new SKSizeI((int)w * Units.EMU_PER_PIXEL, (int)h * Units.EMU_PER_PIXEL);
-
+            return new NPOISize((int)Math.Round(w), (int)Math.Round(h));
         }
 
 

@@ -35,7 +35,7 @@ using NPOI.XSSF.UserModel.Extensions;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using NUnit.Framework.Constraints;
-using SkiaSharp;
+using NPOI.Common.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -3285,7 +3285,7 @@ namespace TestCases.XSSF.UserModel
             XSSFWorkbook workbook = new XSSFWorkbook();
             XSSFCell cell = workbook.CreateSheet().CreateRow(0).CreateCell(0) as XSSFCell;
 
-            XSSFColor color = new XSSFColor(SKColors.Red, workbook.GetStylesSource().IndexedColors);
+            XSSFColor color = new XSSFColor(NPOIColors.Red, workbook.GetStylesSource().IndexedColors);
             XSSFCellStyle style = workbook.CreateCellStyle() as XSSFCellStyle;
             style.FillForegroundColorColor = color;
             style.FillPattern = FillPattern.SolidForeground;
@@ -3305,7 +3305,7 @@ namespace TestCases.XSSF.UserModel
             XSSFWorkbook nwb = XSSFTestDataSamples.WriteOutAndReadBack(workbook);
             workbook.Close();
             XSSFCell ncell = nwb.GetSheetAt(0).GetRow(0).GetCell(0) as XSSFCell;
-            XSSFColor ncolor = new XSSFColor(SKColors.Red, workbook.GetStylesSource().IndexedColors);
+            XSSFColor ncolor = new XSSFColor(NPOIColors.Red, workbook.GetStylesSource().IndexedColors);
 
             // Now the cell is all black
             XSSFColor nactual = ncell.CellStyle.FillBackgroundColorColor as XSSFColor;

@@ -17,11 +17,10 @@
 
 namespace NPOI.SS.Util
 {
+    using NPOI.Common.Graphics;
     using NPOI.HSSF.UserModel;
     using NPOI.SS.UserModel;
-    using SkiaSharp;
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Data;
     using System.Globalization;
@@ -300,7 +299,7 @@ namespace NPOI.SS.Util
             return GetRowHeight(row, useMergedCells, firstColumnIdx, lastColumnIdx);
         }
 
-        public static double GetRowHeight(IRow row, bool useMergedCells)
+        public static double GetRowHeight(IRow row, bool useMergedCells, IFontProvider fontProvider = null)
         {
             if (row == null)
             {
@@ -311,25 +310,25 @@ namespace NPOI.SS.Util
 
             foreach (var cell in row.Cells)
             {
-                double cellHeight = GetCellHeight(cell, useMergedCells);
+                double cellHeight = GetCellHeight(cell, useMergedCells, fontProvider);
                 rowHeight = Math.Max(rowHeight, cellHeight);
             }
 
             return rowHeight;
         }
 
-        public static double GetRowHeight(ISheet sheet, int rowIdx, bool useMergedCells)
+        public static double GetRowHeight(ISheet sheet, int rowIdx, bool useMergedCells, IFontProvider fontProvider = null)
         {
             IRow row = sheet.GetRow(rowIdx);
 
-            return GetRowHeight(row, useMergedCells);
+            return GetRowHeight(row, useMergedCells, fontProvider);
         }
 
-        public static double GetCellHeight(ICell cell, bool useMergedCells)
+        public static double GetCellHeight(ICell cell, bool useMergedCells, IFontProvider fontProvider = null)
         {
             ICell cellToMeasure = useMergedCells ? GetFirstCellFromMergedRegion(cell) : cell;
 
-            double stringHeight = GetActualHeight(cellToMeasure);
+            double stringHeight = GetActualHeight(cellToMeasure, fontProvider);
             int numberOfRowsInMergedRegion = useMergedCells ? GetNumberOfRowsInMergedRegion(cellToMeasure) : 1;
 
             return GetCellConetntHeight(stringHeight, numberOfRowsInMergedRegion);
@@ -348,10 +347,10 @@ namespace NPOI.SS.Util
             return cell;
         }
 
-        private static double GetActualHeight(ICell cell)
+        private static double GetActualHeight(ICell cell, IFontProvider fontProvider = null)
         {
             string stringValue = GetCellStringValue(cell);
-            using SKFont windowsFont = GetWindowsFont(cell);
+            using IMeasuredFont windowsFont = GetWindowsFont(cell, fontProvider);
 
             if (cell.CellStyle.Rotation != 0)
             {
@@ -413,16 +412,16 @@ namespace NPOI.SS.Util
             return null;
         }
 
-        private static SKFont GetWindowsFont(ICell cell)
+        private static IMeasuredFont GetWindowsFont(ICell cell, IFontProvider fontProvider = null)
         {
             var wb = cell.Sheet.Workbook;
             var style = cell.CellStyle;
             var font = wb.GetFontAt(style.FontIndex);
 
-            return IFont2Font(font);
+            return IFont2Font(font, fontProvider);
         }
 
-        private static double GetRotatedContentHeight(ICell cell, string stringValue, SKFont windowsFont)
+        private static double GetRotatedContentHeight(ICell cell, string stringValue, IMeasuredFont windowsFont)
         {
             if (string.IsNullOrEmpty(stringValue))
                 return 0;
@@ -447,7 +446,7 @@ namespace NPOI.SS.Util
             }
         }
 
-        private static double GetContentHeight(string stringValue, SKFont windowsFont)
+        private static double GetContentHeight(string stringValue, IMeasuredFont windowsFont)
         {
             if (string.IsNullOrEmpty(stringValue))
                 return 0;
@@ -467,7 +466,7 @@ namespace NPOI.SS.Util
          * @param useMergedCells    whether to use merged cells
          * @return  the width in pixels or -1 if cell is empty
          */
-        public static double GetCellWidth(ICell cell, int defaultCharWidth, DataFormatter formatter, bool useMergedCells)
+        public static double GetCellWidth(ICell cell, int defaultCharWidth, DataFormatter formatter, bool useMergedCells, IFontProvider fontProvider = null)
         {
             ISheet sheet = cell.Sheet;
             IWorkbook wb = sheet.Workbook;
@@ -498,7 +497,7 @@ namespace NPOI.SS.Util
                 cellType = cell.CachedFormulaResultType;
 
             IFont font = wb.GetFontAt(style.FontIndex);
-            using SKFont windowsFont = IFont2Font(font);
+            using IMeasuredFont windowsFont = IFont2Font(font, fontProvider);
 
             double width = -1;
 
@@ -552,13 +551,13 @@ namespace NPOI.SS.Util
         }
 
         private static double GetCellWidth(int defaultCharWidth, int colspan,
-            ICellStyle style, double width, string str, SKFont windowsFont, ICell cell)
+            ICellStyle style, double width, string str, IMeasuredFont windowsFont, ICell cell)
         {
             double actualWidth;
             try
             {
                 float textWidth = windowsFont.MeasureText(str);
-                windowsFont.GetFontMetrics(out SKFontMetrics metrics);
+                FontMetricsInfo metrics = windowsFont.GetMetrics();
                 float textHeight = metrics.Descent - metrics.Ascent;
 
                 if (style.Rotation != 0)
@@ -615,9 +614,9 @@ namespace NPOI.SS.Util
          * @param maxRows   limit the scope to maxRows rows to speed up the function, or leave 0 (optional)
          * @return  the width in pixels or -1 if all cells are empty
          */
-        public static double GetColumnWidth(ISheet sheet, int column, bool useMergedCells, int maxRows = 0)
+        public static double GetColumnWidth(ISheet sheet, int column, bool useMergedCells, int maxRows = 0, IFontProvider fontProvider = null)
         {
-            return GetColumnWidth(sheet, column, useMergedCells, sheet.FirstRowNum, sheet.LastRowNum, maxRows);
+            return GetColumnWidth(sheet, column, useMergedCells, sheet.FirstRowNum, sheet.LastRowNum, maxRows, fontProvider);
         }
         /**
          * Compute width of a column based on a subset of the rows and return the result
@@ -630,10 +629,10 @@ namespace NPOI.SS.Util
          * @param maxRows   limit the scope to maxRows rows to speed up the function, or leave 0 (optional)
          * @return  the width in pixels or -1 if cell is empty
          */
-        public static double GetColumnWidth(ISheet sheet, int column, bool useMergedCells, int firstRow, int lastRow, int maxRows = 0)
+        public static double GetColumnWidth(ISheet sheet, int column, bool useMergedCells, int firstRow, int lastRow, int maxRows = 0, IFontProvider fontProvider = null)
         {
             DataFormatter formatter = new DataFormatter();
-            int defaultCharWidth = GetDefaultCharWidth(sheet.Workbook);
+            int defaultCharWidth = GetDefaultCharWidth(sheet.Workbook, fontProvider);
 
             // No need to explore the whole sheet: explore only the first maxRows lines
             if (maxRows > 0 && lastRow - firstRow > maxRows) lastRow = firstRow + maxRows;
@@ -644,7 +643,7 @@ namespace NPOI.SS.Util
                 IRow row = sheet.GetRow(rowIdx);
                 if (row != null)
                 {
-                    double cellWidth = GetColumnWidthForRow(row, column, defaultCharWidth, formatter, useMergedCells);
+                    double cellWidth = GetColumnWidthForRow(row, column, defaultCharWidth, formatter, useMergedCells, fontProvider);
                     width = Math.Max(width, cellWidth);
                 }
             }
@@ -657,10 +656,10 @@ namespace NPOI.SS.Util
          * @param wb the workbook to get the default character width from
          * @return default character width
          */
-        public static int GetDefaultCharWidth(IWorkbook wb)
+        public static int GetDefaultCharWidth(IWorkbook wb, IFontProvider fontProvider = null)
         {
             IFont defaultFont = wb.GetFontAt((short)0);
-            using SKFont font = IFont2Font(defaultFont);
+            using IMeasuredFont font = IFont2Font(defaultFont, fontProvider);
 
             try
             {
@@ -687,7 +686,7 @@ namespace NPOI.SS.Util
          * @return  the width in pixels or -1 if cell is empty
          */
         private static double GetColumnWidthForRow(
-                IRow row, int column, int defaultCharWidth, DataFormatter formatter, bool useMergedCells)
+                IRow row, int column, int defaultCharWidth, DataFormatter formatter, bool useMergedCells, IFontProvider fontProvider = null)
         {
             if (row == null)
             {
@@ -701,7 +700,7 @@ namespace NPOI.SS.Util
                 return -1;
             }
 
-            return GetCellWidth(cell, defaultCharWidth, formatter, useMergedCells);
+            return GetCellWidth(cell, defaultCharWidth, formatter, useMergedCells, fontProvider);
         }
 
         /**
@@ -766,74 +765,29 @@ namespace NPOI.SS.Util
             return null;
         }
 
-#pragma warning disable CA2231 // implement equality operators
-        private readonly struct FontCacheKey : IEquatable<FontCacheKey>
-#pragma warning restore CA2231
-        {
-            public FontCacheKey(string fontName, bool bold, bool italic)
-            {
-                FontName = fontName;
-                IsBold = bold;
-                IsItalic = italic;
-            }
-
-            public readonly string FontName;
-            public readonly bool IsBold;
-            public readonly bool IsItalic;
-
-            public bool Equals(FontCacheKey other)
-            {
-                return FontName == other.FontName && IsBold == other.IsBold && IsItalic == other.IsItalic;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is FontCacheKey other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    var hashCode = FontName != null ? FontName.GetHashCode() : 0;
-                    hashCode = (hashCode * 397) ^ IsBold.GetHashCode();
-                    hashCode = (hashCode * 397) ^ IsItalic.GetHashCode();
-                    return hashCode;
-                }
-            }
-        }
-
-        // Cache SKTypeface objects (expensive) keyed by font name + style.
-        // SKFont (typeface + size) is cheap and created on demand from the cached typeface.
-        private static readonly ConcurrentDictionary<FontCacheKey, SKTypeface> TypefaceCache = new();
-
-        /// <summary>
-        /// Convert an NPOI IFont to an SkiaSharp SKFont for text measurement.
-        /// The returned SKFont has its size set in pixels at 96 DPI (i.e. pointSize * 96 / 72).
-        /// Callers are responsible for disposing the returned SKFont.
+/// <summary>
+/// Convert an NPOI IFont to a measurable font obtained from the graphics provider.
+        /// The returned font has its size set in pixels at 96 DPI (i.e. pointSize * 96 / 72).
+        /// Callers are responsible for disposing the returned font.
         /// </summary>
         /// <param name="font1">The NPOI font descriptor.</param>
-        /// <returns>An <see cref="SKFont"/> ready for text measurement.</returns>
-        public static SKFont IFont2Font(IFont font1)
+        /// <param name="fontProvider">
+        /// The provider to resolve the font with, or <c>null</c> to use <see cref="GraphicsProvider.Font"/>.
+        /// </param>
+        /// <returns>An <see cref="IMeasuredFont"/> ready for text measurement.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when no provider is supplied and none has been registered.
+        /// </exception>
+        public static IMeasuredFont IFont2Font(IFont font1, IFontProvider fontProvider = null)
         {
-            var key = new FontCacheKey(font1.FontName, font1.IsBold, font1.IsItalic);
-            SKTypeface typeface = TypefaceCache.GetOrAdd(key, IFont2TypefaceImpl);
-            // Convert point size to pixels at the configured DPI so that MeasureText returns pixel values.
-            float textSizePx = (float)font1.FontHeightInPoints * dpi / 72f;
-            return new SKFont(typeface, textSizePx);
-        }
+            var request = new FontRequest(
+                font1.FontName,
+                (float)font1.FontHeightInPoints,
+                font1.IsBold,
+                font1.IsItalic,
+                dpi);
 
-        private static SKTypeface IFont2TypefaceImpl(FontCacheKey cacheKey)
-        {
-            var fontStyle = new SKFontStyle(
-                cacheKey.IsBold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal,
-                SKFontStyleWidth.Normal,
-                cacheKey.IsItalic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright);
-
-            // Try to find font in system fonts; fall back to Arial, then the default typeface.
-            return SKTypeface.FromFamilyName(cacheKey.FontName, fontStyle)
-                ?? SKTypeface.FromFamilyName("Arial", fontStyle)
-                ?? SKTypeface.Default;
+            return GraphicsProvider.ResolveFont(fontProvider).GetFont(request);
         }
 
         /// <summary>

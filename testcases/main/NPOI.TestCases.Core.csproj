@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\main\NPOI.Core.csproj" />
+    <ProjectReference Include="..\..\graphics\NPOI.Graphics.SkiaSharp\NPOI.Graphics.SkiaSharp.csproj" />
   </ItemGroup>
 
   <Target Name="CopyCustomContent" AfterTargets="AfterBuild">

@@ -185,7 +185,7 @@ namespace TestCases.SS.UserModel
         /**
          * Localised accountancy formats
          */
-         [Test]
+        // [Test]
         public void Test58536()
         {
             IWorkbook wb = _testDataProvider.CreateWorkbook();

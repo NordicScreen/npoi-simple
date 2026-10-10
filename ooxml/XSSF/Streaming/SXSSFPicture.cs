@@ -26,7 +26,7 @@ namespace NPOI.XSSF.Streaming
     using NPOI.OpenXmlFormats.Spreadsheet;
     using NPOI.OpenXmlFormats.Dml;
     using NPOI.OpenXmlFormats.Dml.Spreadsheet;
-    using SkiaSharp;
+    using NPOI.Common.Graphics;
 
     /// <summary>
     /// <para>
@@ -154,7 +154,7 @@ namespace NPOI.XSSF.Streaming
             XSSFClientAnchor anchor = (XSSFClientAnchor)ClientAnchor;
 
             XSSFPictureData data = (XSSFPictureData)PictureData;
-            SKSizeI size = GetImageDimension(data.GetPackagePart(), data.PictureType);
+            NPOISize size = GetImageDimension(data.GetPackagePart(), data.PictureType);
             double scaledWidth = size.Width * scale;
             double scaledHeight = size.Height * scale;
 
@@ -229,7 +229,7 @@ namespace NPOI.XSSF.Streaming
         /// </param>
         /// 
         /// <return>dimension in pixels/// </return>
-        protected static SKSizeI GetImageDimension(PackagePart part, PictureType type)
+        protected static NPOISize GetImageDimension(PackagePart part, PictureType type)
         {
             try
             {
@@ -239,7 +239,7 @@ namespace NPOI.XSSF.Streaming
             {
                 //return a "singulariry" if ImageIO failed to read the image
                 logger.Log(POILogger.WARN, e);
-                return new SKSizeI();
+                return new NPOISize();
             }
         }
 
@@ -275,7 +275,7 @@ namespace NPOI.XSSF.Streaming
         {
             return _picture.GetPreferredSize(scaleX, scaleY);
         }
-        public SKSizeI GetImageDimension()
+        public NPOISize GetImageDimension()
         {
             return _picture.GetImageDimension();
         }
